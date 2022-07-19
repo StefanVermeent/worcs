@@ -22,6 +22,10 @@ recommend_data <- c('library("worcs")',
 #' \code{"PSS", "Secondary", "None"}, and all templates from the
 #' \code{\link[prereg:prereg]{prereg}} package. For more information, see
 #' \code{\link{add_preregistration}}.
+#' @param project_type Character, indicating whether to use the original WORCS flow
+#' or to use the automated git logging approach.
+#' Default: 'original'. Available options include:
+#' \code{"original", "git log"}.
 #' @param add_license Character, indicating what license to include.
 #' Default: 'CC_BY_4.0'. Available options include:
 #' \code{"CC_BY_4.0", "CC_BY-SA_4.0", "CC_BY-NC_4.0", "CC_BY-NC-SA_4.0",
@@ -59,7 +63,7 @@ recommend_data <- c('library("worcs")',
 #' @importFrom prereg vantveer_prereg
 #' @importFrom methods formalArgs
 # @importFrom renv init
-worcs_project <- function(path = "worcs_project", manuscript = "APA6", preregistration = "cos_prereg", add_license = "CC_BY_4.0", use_renv = TRUE, remote_repo = "git@", verbose = TRUE, ...) {
+worcs_project <- function(path = "worcs_project", project_type = "original", manuscript = "APA6", preregistration = "cos_prereg", add_license = "CC_BY_4.0", use_renv = TRUE, remote_repo = "git@", verbose = TRUE, ...) {
   cl <- match.call(expand.dots = FALSE)
 
   # collect inputs
@@ -127,6 +131,19 @@ worcs_project <- function(path = "worcs_project", manuscript = "APA6", preregist
     eval(cl, parent.frame())
   }
   # End prereg
+
+  # Begin project_type
+  if(project_type == "gitlog"){
+    tryCatch({
+      dir.create(file.path(path, "scripts"))
+      dir.create(file.path(path, "data"))
+      dir.create(file.path(path, "preregistrations"))
+      dir.create(file.path(path, "manuscript"))
+      dir.create(file.path(path, ".gitlog"))
+    })
+  }
+  # End project_type
+
 
   # Begin license
   if(!add_license == "none"){
