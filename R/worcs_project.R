@@ -96,16 +96,18 @@ worcs_project <- function(path = "worcs_project", project_type = "original", man
 
 
   # copy 'resources' folder to path
-  tryCatch({
-    copy_resources(which_files = c(
-      "README.md",
-      "prepare_data.R",
-      "worcs_icon.png"
-    ), path = path)
-    col_message("Copying standard files.", verbose = verbose)
-  }, error = function(e){
-    col_message("Copying standard files.", success = FALSE)
-  })
+  if(project_type == "original") {
+    tryCatch({
+      copy_resources(which_files = c(
+        "README.md",
+        "prepare_data.R",
+        "worcs_icon.png"
+      ), path = path)
+      col_message("Copying standard files.", verbose = verbose)
+    }, error = function(e){
+      col_message("Copying standard files.", success = FALSE)
+    })
+  }
 
 
   # write files
@@ -135,11 +137,21 @@ worcs_project <- function(path = "worcs_project", project_type = "original", man
   # Begin project_type
   if(project_type == "gitlog"){
     tryCatch({
+
       dir.create(file.path(path, "scripts"))
-      dir.create(file.path(path, "data"))
+      dir.create(file.path(path, "open_data"))
+      dir.create(file.path(path, "closed_data"))
       dir.create(file.path(path, "preregistrations"))
       dir.create(file.path(path, "manuscript"))
       dir.create(file.path(path, ".gitlog"))
+      copy_resources(which_files = c(
+        "README.md",
+        "worcs_icon.png",
+        ".gitlog/MD5"
+      ), path = path)
+      col_message("Creating gitlog file structure", success = TRUE)
+    }, error = function(e){
+      col_message("Creating gitlog file structure", success = FALSE)
     })
   }
   # End project_type
@@ -184,7 +196,8 @@ worcs_project <- function(path = "worcs_project", project_type = "original", man
           "*.pdf",
           "*.fff",
           "*.log",
-          "*.tex"),
+          "*.tex",
+          "closed_data/"),
         file = file.path(path, ".gitignore"), append = TRUE)
 
   # Update readme

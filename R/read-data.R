@@ -5,24 +5,26 @@ read_csv <- function(file, select_vars = NULL, filter_rows = NULL, shuffle_vars 
   select_vars <- if(is.null(select_vars)) {names(data)}
   filter_rows <- if(is.null(filter_rows)) {"rownames(data) %in% unique(rownames(data))"}
 
-
+  #A Apply data changes
   data <- data |>
-    select(!!select_vars) |>
-    filter(filter_rows |> rlang::parse_expr() |> rlang::eval_tidy()) |>
-    shuffle(data = ., shuffle_vars = shuffle_vars, long_format = long_format)
+    dplyr::select(!!select_vars) |>
+    dplyr::filter(filter_rows |> rlang::parse_expr() |> rlang::eval_tidy()) |>
+    shuffle(data = _, shuffle_vars = shuffle_vars, long_format = long_format, seed = seed)
 
   data_hash <- digest::digest(data)
 
   committed_hashes <-
     gert::git_log()$message |>
-    str_subset("\\[\\[data_access\\]\\].*[a-z0-9]{32}") |>
-    str_extract("[a-z0-9]{32}")
+    grep(pattern = "\\[\\[data_access\\]\\]", x = _, value = TRUE) |>
+    (\(.) regmatches(x = ., m = gregexpr("[a-z0-9]{32}", text = .)))() |>
+    unlist()
+
 
   message(length(committed_hashes), " previously committed data files found.")
 
   if(!data_hash %in% committed_hashes) {
 
-    response = NA
+    response = FALSE
 
     while(response != 'Y' & response != "n") {
       response <- readline(prompt = "NEW DATA FILE DETECTED. This will trigger an automatic commit to GitHub. Are you sure you want to continue? [Y/n]:")
@@ -34,19 +36,25 @@ read_csv <- function(file, select_vars = NULL, filter_rows = NULL, shuffle_vars 
 
     message <- readline(prompt = "If you want, you can type a short commit message about the data file. Press enter for a default message: ")
 
-    log_milestone
+    # Construct commit message
+    select_vars <- paste(select_vars, collapse=",")
+    filter_rows <- paste(filter_rows, collapse=",")
+    shuffle_vars <- paste(shuffle_vars, collapse=",")
 
+    commit_code <- glue::glue("code read_csv('{file}') |> select({select_vars}) |> filter({filter_rows}) |> shuffle(data=_, shuffle_vars = {shuffle_vars}, long_format = {long_format}, seed = {seed})")
+    commit_hash <- glue::glue("object_hash {data_hash}")
+    commit_message <- glue::glue("[[data_access]] {message}\n{commit_hash}\n{commit_code}")
 
-  }
+    readr::read_file(".gitlog/MD5") |>
+      paste(data_hash, sep = "\n") |>
+      readr::write_file(".gitlog/MD5")
 
+    git_update(
+      message = commit_message,
+      files = ".gitlog/MD5"
+    )
 
-
-
-    log_milestone(..., milestone, message)
-
-      git2r::add(...)
-      git2r::commit(paste0("[[", milestone, "]]", " ", message))
-
+    data
 
 
   }
@@ -59,7 +67,7 @@ read_csv <- function(file, select_vars = NULL, filter_rows = NULL, shuffle_vars 
 
 
 
-shuffle <- function(data, shuffle_vars, long_format, seed = set.seed) {
+shuffle <- function(data, shuffle_vars, long_format, seed = seed) {
 
   if(is.null(shuffle_vars)) {
     return(data)
@@ -91,21 +99,4 @@ shuffle <- function(data, shuffle_vars, long_format, seed = set.seed) {
       arrange(across(matches(shuffle_vars[[1]])))
 
   data
-}
-
-
-check_object_hash <- function(hash) {
-
-
-  committed_hashes <- gert::git_log()$message |>
-    str_subset("\\[\\[data_access\\]\\]") |>
-    str_remove(string = _, pattern = "\\[\\[data_access\\]\\].*object_hash\\s")
-
-  if(hash %in% committed_hashes) {
-    FALSE
-  } else {
-    TRUE
-  }
-
-
 }
