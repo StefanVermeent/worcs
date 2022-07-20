@@ -8,6 +8,11 @@ Widget: TextInput
 Label: Git remote repository address
 Default: git@[...].git
 
+Parameter: project_type
+Widget: SelectInput
+Label: project type
+Fields: original, gitlog
+
 Parameter: use_renv
 Widget: CheckboxInput
 Label: Use renv
