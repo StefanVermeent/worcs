@@ -17,15 +17,21 @@ recommend_data <- c('library("worcs")',
 #' a \code{\link[rmarkdown]{github_document}}, and templates included in the
 #' \code{\link[rticles:rticles]{rticles}} package.
 #' For more information, see \code{\link{add_manuscript}}.
+#'
+#'
 #' @param preregistration Character, indicating what template to use for the
 #' preregistration. Default: 'cos_prereg'. Available choices include:
 #' \code{"PSS", "Secondary", "None"}, and all templates from the
 #' \code{\link[prereg:prereg]{prereg}} package. For more information, see
 #' \code{\link{add_preregistration}}.
+#'
+#'
 #' @param project_type Character, indicating whether to use the original WORCS flow
 #' or to use the automated git logging approach.
 #' Default: 'original'. Available options include:
-#' \code{"original", "git log"}.
+#' \code{"original", "gitlog"}.
+#'
+#'
 #' @param add_license Character, indicating what license to include.
 #' Default: 'CC_BY_4.0'. Available options include:
 #' \code{"CC_BY_4.0", "CC_BY-SA_4.0", "CC_BY-NC_4.0", "CC_BY-NC-SA_4.0",
@@ -50,6 +56,7 @@ recommend_data <- c('library("worcs")',
 #' worcs_project(file.path(tempdir(), the_test, "worcs_project"),
 #'               manuscript = "github_document",
 #'               preregistration = "None",
+#'               project_type = "original",
 #'               add_license = "None",
 #'               use_renv = FALSE,
 #'               remote_repo = "git@")
@@ -70,6 +77,7 @@ worcs_project <- function(path = "worcs_project", project_type = "original", man
   manuscript <- tolower(manuscript)
   preregistration <- tolower(preregistration)
   add_license <- tolower(add_license)
+  project_type <- tolower(project_type)
   dots <- list(...)
   # ensure path exists
   dir.create(path, recursive = TRUE, showWarnings = FALSE)
@@ -110,6 +118,28 @@ worcs_project <- function(path = "worcs_project", project_type = "original", man
   }
 
 
+# Begin project_type
+  if(project_type == "gitlog"){
+    tryCatch({
+
+      dir.create(file.path(path, "scripts"))
+      dir.create(file.path(path, "open_data"))
+      dir.create(file.path(path, "closed_data"))
+      dir.create(file.path(path, "preregistrations"))
+      dir.create(file.path(path, "manuscript"))
+      dir.create(file.path(path, ".gitlog"))
+      copy_resources(which_files = c(
+        "README.md",
+        "worcs_icon.png",
+        ".gitlog/MD5"
+      ), path = path)
+      col_message("Creating gitlog file structure", success = TRUE)
+    }, error = function(e){
+      col_message("Creating gitlog file structure", success = FALSE)
+    })
+  }
+  # End project_type
+
   # write files
 
   # Begin manuscript
@@ -134,27 +164,7 @@ worcs_project <- function(path = "worcs_project", project_type = "original", man
   }
   # End prereg
 
-  # Begin project_type
-  if(project_type == "gitlog"){
-    tryCatch({
 
-      dir.create(file.path(path, "scripts"))
-      dir.create(file.path(path, "open_data"))
-      dir.create(file.path(path, "closed_data"))
-      dir.create(file.path(path, "preregistrations"))
-      dir.create(file.path(path, "manuscript"))
-      dir.create(file.path(path, ".gitlog"))
-      copy_resources(which_files = c(
-        "README.md",
-        "worcs_icon.png",
-        ".gitlog/MD5"
-      ), path = path)
-      col_message("Creating gitlog file structure", success = TRUE)
-    }, error = function(e){
-      col_message("Creating gitlog file structure", success = FALSE)
-    })
-  }
-  # End project_type
 
 
   # Begin license
